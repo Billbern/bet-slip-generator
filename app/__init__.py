@@ -1,60 +1,27 @@
-import os ,time, json
-from flask import Flask, render_template
+import os 
+from dotenv import load_dotenv
+load_dotenv()
+
+from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 from flask_socketio import SocketIO, emit
-import redis
-from rq import Queue
 
-
-from app.scraper.main import generator
 from app.config import DevConfig
 
 
 app = Flask(__name__, static_folder="assets")
-app.config.from_object(DevConfig())
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config.from_object(DevConfig)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql://{os.environ['DATABASE_USER']}:{os.environ['DATABASE_PASSWORD']}@127.0.0.1:5432/{os.environ['DATABASE_NAME']}"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 socketio = SocketIO(app)
 
 
-conn_redis = redis.Redis()
-queue = Queue(connection=conn_redis)
+from app import routes
 
-def fetch_data():
-    data = []
-    with open(f"{os.getcwd()}/app/data/games.json") as f:
-        data = json.load(f)
-    return data
-
-
-
-@app.route("/")
-def home():
-    return render_template('index.html')
-
-
-
-@socketio.on("connect")
-def handle_connect():
-    data = fetch_data()
-    emit("data", data)
-  
-      
-@socketio.on("generate")
-def handle_generate(data):
-    if data["start"]:
-        job = queue.enqueue(generator, 15, job_timeout=3600)
-
-        while job.result == None:
-            time.sleep(2)
-        
-        data = fetch_data()
-        emit("data", data)
-
-
-@socketio.on("fetch")
-def handle_fetch(data):
-    if data["get"]:
-        data = fetch_data()
-        emit("data", data)
+with app.app_context():
+    db.create_all()

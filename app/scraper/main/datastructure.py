@@ -47,9 +47,9 @@ class CharTree:
         for char in __addons:
             self.tree.populate(char)
     
-    def generateSlip(self, slip):
+    def generateSlip(self, slip, n):
         bin = [slip]
-        while len(bin) < 100:
+        while len(bin) < n:
             initialSlip = bin[-1]
             if initialSlip[-1] == "Z":
                 count = -1

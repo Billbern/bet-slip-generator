@@ -4,7 +4,7 @@ function dispSlips(item, key, slipsData) {
                                         <div class="slip-content">
                                             <div class="content-left">
                                                 <div class="slip-code">
-                                                    <span>${item.betcode}</span>
+                                                    <span>${item.code}</span>
                                                 </div>
                                                 <div class="slip-gme">
                                                     <span>${item.games.length} games</span>
@@ -50,7 +50,7 @@ function dispGames(data) {
                                                 </div>
                                                 <div class="slip-body">
                                                     <div>
-                                                        <input id="codeText" type="text" value="${data.betcode}" readonly/>
+                                                        <input id="codeText" type="text" value="${data.code}" readonly/>
                                                     </div>
                                                     <div>
                                                         <div>
@@ -118,7 +118,7 @@ function dispGames(data) {
                                                                 </div>
                                                                 <div class="gme-content">
                                                                     <div class="gme-match">
-                                                                        ${game.game}
+                                                                        ${game.match}
                                                                     </div>
                                                                     <div class="gme-option">
                                                                         <span>
@@ -171,7 +171,7 @@ function dispEmpty(){
 function changeView(){
     let slipsData = JSON.parse(window.localStorage.getItem("slips"));
 
-    if (slipsData && slipsData.length > 1) {
+    if (slipsData && slipsData.length > 0) {
         slipsData.forEach((item, key) => {
             dispSlips(item, key, slipsData);
         });
@@ -194,15 +194,17 @@ document.body.onload = () => {
 
     socket.on("data", (data)=>{
         window.localStorage.clear();
-        window.localStorage.setItem("slips", JSON.stringify(data));
+
+        window.localStorage.setItem("slips", JSON.stringify(data.data));
+        
+        if(data.activity === "generation"){
+            startBtn.classList.remove("loading")
+        }
         changeView(); 
     });
 
-
-    
-
     startBtn.addEventListener("click", ()=>{
-        console.log("clicked");
+        startBtn.classList.add("loading")
         socket.emit("generate", {start: true});
     });
 

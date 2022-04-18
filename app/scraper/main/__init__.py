@@ -1,37 +1,31 @@
 import time
-import json
-from os import getcwd
 from pprint import pprint
 from random import randint
+from app.models import *
+from app import db
 from app.scraper.main.datastructure import CharTree
 from app.scraper.main.bookchecker import BookChecker
 
 
 def generator(n):
-    data = None
-    slipgames = None
-    
-    data_files = [f"{getcwd()}/app/data/data.json", f"{getcwd()}/app/data/games.json"]
+    data = Zero.query.all()
+    slipgames = []
 
-    with open(data_files[0]) as f:
-        data = json.load(f)
-
-    with open(data_files[1]) as f:
-        slipgames = json.load(f)
-
-    code = data[-1]
+    code = data[-1].code
 
     chartree = CharTree()
-    slips = chartree.generateSlip(code)
+    slips = chartree.generateSlip(code, n)
 
     count = 0
     temps = []
+    
+    print(slips)
 
-    while len(slipgames) <= n:
+    while count <= (n//2) + 5:
         
         time.sleep(10)
         
-        randoms = randint(0,99)
+        randoms = randint(0, n-1)
         bookchecker = BookChecker()
         
         
@@ -39,6 +33,7 @@ def generator(n):
             
             try:
                 games = bookchecker.getSlipContent(slips[randoms])
+                print(count, end=" ")
                 pprint(games)
                 
                 if len(games["games"]) > 0 and float(games["odds"]) > 1:
@@ -48,18 +43,26 @@ def generator(n):
             except Exception as e:
                 print(e)
         
-        if count >= 99:
-            break    
-        
         count += 1
-
-
-    data.append(slips[-1])
-
-    with open(data_files[1], 'w') as f:
-        json.dump(slipgames, f)
-
-    with open(data_files[0], 'w') as f:
-        json.dump(data, f)
+        
+    addone = Zero(code=slips[-1])
+    db.session.add(addone)
+    db.session.commit()
+    
+    if slipgames:
+        for slip in slipgames:
+            newslip = Slip(code=slip["betcode"], odds=float(slip["odds"]))
+            db.session.add(newslip)
+            db.session.flush()
+            db.session.refresh(newslip)
+            
+            for game in slip["games"]:
+                newodds = 0
+                if game["odds"].replace(".", "").isdecimal():
+                    newodds = game["odds"]
+                newgame = Game(match=game["game"], option=game["option"], odds=newodds, slip_id=newslip.id)
+                db.session.add(newgame)
+                db.session.commit()
+        
     
     return True
