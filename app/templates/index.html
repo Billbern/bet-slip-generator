@@ -20,9 +20,14 @@
                         </a>
                     </div>
                     <div>
-                        <button class="show-btn" id="dispSlips">
-                            display slips
-                        </button>
+                        <select name="" id="generateCountry">
+                            <option value="ghana">Ghana</option>
+                            <option value="kenya">Kenya</option>
+                            <option value="nigeria">Nigeria</option>
+                            <option value="tanzania">Tanzania</option>
+                            <option value="uganda">Uganda</option>
+                            <option value="zambia">Zambia</option>
+                        </select>
                         <button class="start-btn" id="startGen">
                             <div class="text">
                                 generate slips
@@ -36,7 +41,20 @@
                     </div>
                 </div>
                 <div>
-                    
+                    <div>
+                        <ul>
+                            <li>BC9 - GH</li>
+                            <li>BC5 - KE</li>
+                            <li>BCD - NG</li>
+                            <li>BCH - TZ</li>
+                            <li>BCC - UGA</li>
+                            <li>BCK - ZM</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <input type="text" name="" id="slipCode">
+                        <input type="button" value="add" id="addZeroBtn">
+                    </div>
                 </div>
             </div>
         </div>
@@ -118,6 +136,7 @@
         </div>
     </div>
     <script src={{ url_for("static", filename="/js/socket.io.js") }} type="text/javascript"></script>
+    <script src={{ url_for("static", filename="/js/moment.min.js") }} type="text/javascript"></script>
     <script src={{ url_for("static", filename="/js/index.js") }} type="text/javascript"></script>
 </body>
 

@@ -1,4 +1,4 @@
-function dispSlips(item, key, slipsData) {
+function dispSlips(item, key, socket) {
     const slipsContainer = document.querySelector("#selectSlip").firstElementChild;
     const slipitem = `<div class="item-slip" data-key="${key}"><div class="slip-contain"><div class="slip-icon"><span><svg width="24" height="24" viewBox="0 0 210.68 210.68" xmlns="http://www.w3.org/2000/svg"><path d="M67.89 66.08h39.453c4.141 0 7.496-3.293 7.496-7.356s-3.355-7.356-7.496-7.356H67.89c-4.14 0-7.496 3.294-7.496 7.356 0 4.062 3.356 7.357 7.496 7.357zM142.788 82.442H67.89c-4.14 0-7.496 3.294-7.496 7.356s3.356 7.356 7.496 7.356h74.898c4.14 0 7.496-3.293 7.496-7.356s-3.355-7.356-7.496-7.356zM67.89 128.235h53.336c4.141 0 7.496-3.294 7.496-7.356s-3.355-7.357-7.496-7.357H67.89c-4.14 0-7.496 3.294-7.496 7.357s3.356 7.356 7.496 7.356zM142.788 144.6H67.89c-4.14 0-7.496 3.294-7.496 7.356s3.356 7.356 7.496 7.356h74.898c4.14 0 7.496-3.293 7.496-7.356s-3.355-7.356-7.496-7.356z"/><path d="M174.383 19.816L158.446 4.175c-1.405-1.38-3.312-2.155-5.3-2.155s-3.895.775-5.301 2.155l-10.636 10.439-10.637-10.44c-1.406-1.38-3.313-2.154-5.3-2.154s-3.895.775-5.302 2.155l-10.634 10.438L94.703 4.175A7.57 7.57 0 0089.4 2.02 7.566 7.566 0 0084.1 4.176L73.469 14.613 62.833 4.175c-1.405-1.38-3.312-2.155-5.3-2.155s-3.895.775-5.3 2.155L36.295 19.816a7.288 7.288 0 00-2.194 5.201v160.65c0 1.951.79 3.822 2.195 5.202l15.936 15.637c2.926 2.873 7.672 2.872 10.599 0l10.638-10.438 10.639 10.438c1.406 1.379 3.313 2.154 5.3 2.154s3.895-.776 5.3-2.156l10.629-10.434 10.634 10.435c2.927 2.873 7.672 2.872 10.6 0l10.638-10.437 10.637 10.437c1.463 1.436 3.382 2.154 5.3 2.154s3.837-.718 5.3-2.154l15.936-15.636a7.285 7.285 0 002.195-5.203V25.017a7.294 7.294 0 00-2.195-5.201zM161.586 182.62l-8.44 8.282-10.637-10.437c-2.928-2.873-7.672-2.872-10.599 0l-10.638 10.437-10.636-10.437a7.562 7.562 0 00-5.3-2.154 7.562 7.562 0 00-5.3 2.156L89.408 190.9 78.77 180.465c-2.927-2.872-7.672-2.872-10.6 0l-10.637 10.437-8.44-8.282V28.065l8.44-8.285L68.17 30.219a7.57 7.57 0 005.3 2.155 7.568 7.568 0 005.302-2.156l10.63-10.437 10.634 10.438c1.405 1.38 3.312 2.155 5.3 2.155s3.895-.775 5.301-2.155l10.635-10.44 10.638 10.44a7.568 7.568 0 005.301 2.155 7.57 7.57 0 005.301-2.155l10.636-10.44 8.44 8.285V182.62z"/></svg></span></div>
                                         <div class="slip-content">
@@ -7,11 +7,12 @@ function dispSlips(item, key, slipsData) {
                                                     <span>${item.code}</span>
                                                 </div>
                                                 <div class="slip-gme">
-                                                    <span>${item.games.length} games</span>
+                                                    <span>${item.games} games</span>
                                                 </div>
                                             </div>
                                             <div class="content-right">
                                                 <span>${item.odds} odds</span>
+                                                <div>${moment(item.created_at).format("DD/MM/YY HH:MM")}</div>
                                             </div>
                                         </div>
                                     </div>
@@ -27,11 +28,14 @@ function dispSlips(item, key, slipsData) {
 
                 e.target.classList.add("active");
 
-                const slipGames = slipsData[e.target.getAttribute("data-key")];
-                dispGames(slipGames);
+                const searchcode = e.target.firstElementChild.innerText.split('\n')[0];
+
+                socket.emit('single-slip', {code: searchcode})
+
             }
         })
     })
+
 };
 
 function dispGames(data) {
@@ -168,12 +172,12 @@ function dispEmpty(){
                     </div>`;
 };
 
-function changeView(){
+function changeView(socket){
     let slipsData = JSON.parse(window.localStorage.getItem("slips"));
 
     if (slipsData && slipsData.length > 0) {
         slipsData.forEach((item, key) => {
-            dispSlips(item, key, slipsData);
+            dispSlips(item, key, socket);
         });
     }else{
         dispEmpty();
@@ -183,7 +187,7 @@ function changeView(){
 document.body.onload = () => {
 
     const startBtn = document.querySelector("#startGen");
-    const getdataBtn = document.querySelector("#dispSlips");
+    const addSlipBtn = document.querySelector("#addZeroBtn")
 
 
     let socket = io();
@@ -200,16 +204,27 @@ document.body.onload = () => {
         if(data.activity === "generation"){
             startBtn.classList.remove("loading")
         }
-        changeView(); 
+        changeView(socket); 
     });
+
+    socket.on("single", (data)=>{
+        const slipdata = data;
+        dispGames(slipdata);
+    })
 
     startBtn.addEventListener("click", ()=>{
+        const country = document.querySelector('#generateCountry').value;
         startBtn.classList.add("loading")
-        socket.emit("generate", {start: true});
+        socket.emit("generate", {start: true, country: country});
     });
 
-    getdataBtn.addEventListener("click", ()=>{
-        socket.emit("fetch", {get: true});
+    addSlipBtn.addEventListener('click', ()=>{
+        const formDataCode = document.querySelector("#slipCode").value;
+        const formDataCountry = document.querySelector("#generateCountry").value;
+        if (formDataCode && formDataCountry){
+            socket.emit("initslip", { code: formDataCode, country: formDataCountry, date: new Date() })
+        }
     })
+
 
 }

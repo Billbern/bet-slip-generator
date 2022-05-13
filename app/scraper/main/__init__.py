@@ -1,14 +1,16 @@
 import time
 from pprint import pprint
-from random import randint
+from random import choice
 from app.models import *
 from app import db
 from app.scraper.main.datastructure import CharTree
 from app.scraper.main.bookchecker import BookChecker
 
 
-def generator(n):
-    data = Zero.query.all()
+def generator(n, country='ghana'):
+    
+    data = Zero.query.filter(Zero.country == country).all()
+    
     slipgames = []
 
     code = data[-1].code
@@ -25,19 +27,19 @@ def generator(n):
         
         time.sleep(10)
         
-        randoms = randint(0, n-1)
+        randoms = choice(slips)
         bookchecker = BookChecker()
         
         
-        if slips[randoms] not in temps:
+        if randoms not in temps:
             
             try:
-                games = bookchecker.getSlipContent(slips[randoms])
+                games = bookchecker.getSlipContent(randoms, country)
                 print(count, end=" ")
                 pprint(games)
                 
                 if len(games["games"]) > 0 and float(games["odds"]) > 1:
-                    temps.append(slips[randoms])
+                    temps.append(randoms)
                     slipgames.append(games)
             
             except Exception as e:
@@ -45,7 +47,7 @@ def generator(n):
         
         count += 1
         
-    addone = Zero(code=slips[-1])
+    addone = Zero(code=slips[-1], country=country)
     db.session.add(addone)
     db.session.commit()
     

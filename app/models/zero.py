@@ -8,6 +8,7 @@ class Zero(db.Model):
     
     id = db.Column(db.Integer(), primary_key=True, autoincrement=True)
     code = db.Column(db.String(255), nullable=False)
+    country = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     def as_dict(self):
@@ -20,4 +21,4 @@ class Zero(db.Model):
         return data
 
 
-event.listen(Zero.__table__, 'after_create', DDL(""" INSERT INTO zero (code) VALUES ('BC8GMS6X') """ ))
+event.listen(Zero.__table__, 'after_create', DDL(""" INSERT INTO zero (code, country) VALUES ('BC8GMS6X', 'ghana') """ ))

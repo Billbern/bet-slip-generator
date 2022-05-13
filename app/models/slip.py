@@ -1,5 +1,7 @@
+import code
 from datetime import datetime
 from app import db
+from app.models import games
 
 class Slip(db.Model):
     __tablename__ = 'slip'
@@ -11,6 +13,10 @@ class Slip(db.Model):
     created_at = db.Column(db.DateTime, nullable=True, default=datetime.utcnow)
     expiry_date = db.Column(db.DateTime, nullable=True)
     games = db.relationship("Game", backref="slip", lazy=True)
+    
+    def as_display(self):
+        return {'id': self.id, 'code': self.code, 'odds': self.odds, 'expired': self.expired, 'created_at': datetime.isoformat(self.created_at), 'expiry_date': self.expiry_date, "games": len(self.games)}
+        
     
     def as_dict(self):
         data = {  }
